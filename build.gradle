@@ -1,0 +1,31 @@
+buildscript {
+    ext.kotlin_version = '1.4.10'
+    ext.jvm_target = '1.8'
+    ext.log4j2_version = '2.11.1'
+
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath group: 'org.jetbrains.kotlin', name: 'kotlin-gradle-plugin', version: kotlin_version
+    }
+}
+
+apply plugin: 'kotlin'
+
+group 'net.cydhra'
+version '1.0'
+
+repositories {
+    jcenter()
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    implementation group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-jdk8'
+    implementation group: 'com.github.Cydhra', name: 'acromantula', version: '36d5f501ba'
+    implementation  group: 'com.github.memo33', name: "jsquish", version: "2.0.1"
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: log4j2_version
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: log4j2_version
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: log4j2_version
+}
