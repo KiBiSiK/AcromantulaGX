@@ -1,5 +1,6 @@
 package net.cydhra.acromantula.gx
 
+import net.cydhra.acromantula.features.exporter.ExporterFeature
 import net.cydhra.acromantula.features.importer.ImporterFeature
 import net.cydhra.acromantula.features.view.GenerateViewFeature
 import net.cydhra.acromantula.plugins.AcromantulaPlugin
@@ -17,6 +18,7 @@ class GxPlugin : AcromantulaPlugin {
 
     override fun initialize() {
         ImporterFeature.registerImporterStrategy(ArtArchiveImporterStrategy())
+        ExporterFeature.registerExporterStrategy(ArtArchiveExporterStrategy())
         GenerateViewFeature.registerViewGenerator(GxtxViewGenerator())
         logger.info("registered gx parsers")
     }
