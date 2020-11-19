@@ -22,6 +22,8 @@ class GxtxViewGenerator : ViewGeneratorStrategy {
 
     override val viewType: String = "gxtx"
 
+    override val fileType: FileType = pngFileType
+
     override fun handles(fileEntity: FileEntity): Boolean {
         val content = WorkspaceService.getFileContent(fileEntity)
         val buffer = ByteArray(4)

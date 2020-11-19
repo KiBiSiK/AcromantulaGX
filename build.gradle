@@ -25,7 +25,7 @@ repositories {
 
 dependencies {
     implementation group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-jdk8'
-    implementation group: 'com.github.Cydhra', name: 'acromantula', version: 'fd3e1ba76d'
+    implementation group: 'com.github.Cydhra', name: 'acromantula', version: '721a6a5a8b'
     implementation group: 'com.github.memo33', name: "jsquish", version: "2.0.1"
 
     // apparently this is not a transitive dependency of 'acromantula'. I'm unsure why, but adding it here
