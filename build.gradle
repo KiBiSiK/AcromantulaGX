@@ -8,10 +8,12 @@ buildscript {
     }
     dependencies {
         classpath group: 'org.jetbrains.kotlin', name: 'kotlin-gradle-plugin', version: kotlin_version
+        classpath 'com.github.jengelman.gradle.plugins:shadow:5.2.0'
     }
 }
 
 apply plugin: 'kotlin'
+apply plugin: 'com.github.johnrengelman.shadow'
 
 group 'net.cydhra'
 version '1.0'
