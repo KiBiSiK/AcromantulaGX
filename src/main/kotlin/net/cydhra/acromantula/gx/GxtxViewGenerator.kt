@@ -136,23 +136,49 @@ class GxtxViewGenerator : ViewGeneratorStrategy {
                 val img = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
                 val imageBuffer = img.raster.dataBuffer
                 var i = 0
-                // TODO: warning, this code does not produce sane results. The actual encoding in the resources is not simple ARGB4
+                // TODO: warning, this code does not produce sane results. The actual encoding in the resources is not simple A8R8G8B8
                 while (i < data.size) {
                     val alpha = data[i].toInt()
                     val red = data[i + 1].toInt()
                     val green = data[i + 2].toInt()
                     val blue = data[i + 3].toInt()
                     val argb = (alpha shl 24) or (red shl 16) or (green shl 8) or (blue)
-                    imageBuffer.setElem(i, argb)
+                    imageBuffer.setElem(i / 4, argb)
                     i += 4
                 }
 
                 img
             }
-            // TODO decompress remaining compression formats
-            else -> {
-                logger.warn("decompression failed, decompression algorithm unsupported.")
-                throw java.lang.IllegalArgumentException("encoding $encoding is not implemented")
+            GxtxCompressionType.A1R5G5B5 -> {
+                val img = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+                val imageBuffer = img.raster.dataBuffer
+                var i = 0
+                // TODO: warning, this code does not produce sane results. The actual encoding in the resources is not simple A1R5G5B5
+                while (i < data.size) {
+                    val alpha = (data[i].toInt() shr 7) // shr is sign-extending
+                    val red = (data[i].toInt() and 0b0111_1100) shl 1
+                    val green = (((data[i].toInt() shl 8) or (data[i + 1].toInt())) and 0b0000_0011_1110_0000) shr 2
+                    val blue = data[i + 1].toInt() shl 3
+                    val argb = (alpha shl 24) or (red shl 16) or (green shl 8) or (blue)
+                    imageBuffer.setElem(i / 2, argb)
+                    i += 2
+                }
+                img
+            }
+            GxtxCompressionType.R5G6B5 -> {
+                val img = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+                val imageBuffer = img.raster.dataBuffer
+                var i = 0
+                // TODO: warning, this code does not produce sane results. The actual encoding in the resources is not simple R5G6B5
+                while (i < data.size) {
+                    val red = (data[i].toInt() and 0b1111_1000)
+                    val green = (((data[i].toInt() shl 8) or (data[i + 1].toInt())) and 0b0000_0111_1110_0000) shr 3
+                    val blue = data[i + 1].toInt() shl 3
+                    val argb = (0xFF shl 24) or (red shl 16) or (green shl 8) or (blue)
+                    imageBuffer.setElem(i / 2, argb)
+                    i += 2
+                }
+                img
             }
         }
     }
