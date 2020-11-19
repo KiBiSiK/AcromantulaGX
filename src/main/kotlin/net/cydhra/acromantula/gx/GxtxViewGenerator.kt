@@ -43,7 +43,7 @@ class GxtxViewGenerator : ViewGeneratorStrategy {
             .order(ByteOrder.LITTLE_ENDIAN)
 
         // skip magic bytes
-        contentBuffer.position(4)
+        contentBuffer.getInt()
         val width = contentBuffer.getShort().toInt()
         val height = contentBuffer.getShort().toInt()
         val dataBufferSize = contentBuffer.getInt()
