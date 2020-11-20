@@ -12,6 +12,7 @@ import org.apache.logging.log4j.LogManager
 import java.awt.geom.AffineTransform
 import java.awt.image.AffineTransformOp
 import java.awt.image.BufferedImage
+import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -25,11 +26,15 @@ import kotlin.math.pow
 class GxtxViewGenerator : ViewGeneratorStrategy {
     companion object {
         private val logger = LogManager.getLogger()
+
+        private const val HEADER_SIZE = 16
     }
 
     override val viewType: String = "gxtx"
 
     override val fileType: FileType = pngFileType
+
+    override val supportsReconstruction: Boolean = true
 
     override fun handles(fileEntity: FileEntity): Boolean {
         val content = WorkspaceService.getFileContent(fileEntity)
@@ -83,6 +88,59 @@ class GxtxViewGenerator : ViewGeneratorStrategy {
         // write image as png into file system
         ImageIO.write(flipTransform.filter(img, null), "png", byteArrayOutputStream)
         return WorkspaceService.addFileRepresentation(fileEntity, this.viewType, byteArrayOutputStream.toByteArray())
+    }
+
+    @Suppress("UsePropertyAccessSyntax")
+    override fun reconstructFromView(fileEntity: FileEntity, buffer: ByteArray) {
+        // TODO generate a database model, so I don't have to parse the meta data here again. I need it anyway for
+        //  archive reconstruction
+        val inputStream = WorkspaceService.getFileContent(fileEntity)
+        val headerBuffer = ByteBuffer.wrap(ByteArray(HEADER_SIZE)).order(ByteOrder.LITTLE_ENDIAN)
+
+        // flip image, because gxtx images are stored up-side down
+        val importedImage = ImageIO.read(ByteArrayInputStream(buffer))
+        val flipTransform = AffineTransformOp(
+            AffineTransform.getScaleInstance(1.0, -1.0).also { it.translate(0.0, (-importedImage.height).toDouble()) },
+            AffineTransformOp.TYPE_NEAREST_NEIGHBOR
+        )
+        val img = flipTransform.filter(importedImage, null)
+
+        // read compression type from header and compress data accordingly
+        inputStream.read(headerBuffer.array())
+
+        val gxtxMagic = headerBuffer.getInt()
+
+        // skip width, height, compressed data buffer size (two shorts, one integer)
+        headerBuffer.getLong()
+
+        // read unknown magic and compression type
+        val unknownMagic = headerBuffer.getShort()
+        val compressionDescriptor = headerBuffer.getShort()
+        val compressionType = GxtxCompressionType.byDescriptor(compressionDescriptor.toInt())
+
+        // compress data
+        val (compressedData, width, height) = convertImageToData(img, compressionType)
+
+        // prepare output buffers for new file content
+        val outputStream = ByteArrayOutputStream()
+        val newHeaderBuffer = ByteBuffer.allocate(16).order(ByteOrder.LITTLE_ENDIAN)
+
+        // write new header
+        with(newHeaderBuffer) {
+            putInt(gxtxMagic)
+            putShort(width.toShort())
+            putShort(height.toShort())
+            putInt(compressedData.size)
+            putShort(unknownMagic)
+            putShort(compressionDescriptor)
+        }
+
+        // write everything to the file
+        outputStream.writeBytes(newHeaderBuffer.array())
+        outputStream.writeBytes(compressedData)
+
+        WorkspaceService.updateFileEntry(fileEntity, outputStream.toByteArray())
+        outputStream.close()
     }
 
     /**
@@ -180,6 +238,37 @@ class GxtxViewGenerator : ViewGeneratorStrategy {
                 }
                 img
             }
+        }
+    }
+
+    /**
+     * @return a triple of the compressed image data, the image width and its height
+     */
+    private fun convertImageToData(image: BufferedImage, encoding: GxtxCompressionType): Triple<ByteArray, Int, Int> {
+        val width = image.width
+        val height = image.height
+
+        if (encoding == GxtxCompressionType.DXT1 || encoding == GxtxCompressionType.DXT3) {
+            val rgba = ByteArray(width * height * 4)
+            for (y in (0 until height)) {
+                for (x in (0 until width)) {
+                    val pixel = image.getRGB(x, y)
+
+                    rgba[(y * image.width + x) * 4 + 0] = ((pixel shr 16) and 0xFF).toByte()
+                    rgba[(y * image.width + x) * 4 + 1] = ((pixel shr 8) and 0xFF).toByte()
+                    rgba[(y * image.width + x) * 4 + 2] = (pixel and 0xFF).toByte()
+                    rgba[(y * image.width + x) * 4 + 3] = ((pixel shr 24) and 0xFF).toByte()
+                }
+            }
+
+            val compressedData = if (encoding == GxtxCompressionType.DXT1)
+                Squish.compressImage(rgba, width, height, null, Squish.CompressionType.DXT1)
+            else
+                Squish.compressImage(rgba, width, height, null, Squish.CompressionType.DXT3)
+
+            return Triple(compressedData, width, height)
+        } else {
+            throw NotImplementedError("not yet implemented")
         }
     }
 }
