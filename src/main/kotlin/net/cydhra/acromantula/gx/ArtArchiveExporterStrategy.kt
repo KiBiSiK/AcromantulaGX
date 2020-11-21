@@ -48,7 +48,7 @@ class ArtArchiveExporterStrategy : ExporterStrategy {
         // I have to read all files into memory here, because I need to know their sizes to write the header
         var currentOffset = headerBuffer.capacity()
         for (file in totalFiles) {
-            val buffer = WorkspaceService.getFileContent(file).readAllBytes()
+            val buffer = WorkspaceService.getFileContent(file).readBytes()
             totalFilesBuffers += buffer
             headerBuffer.putInt(currentOffset)
             currentOffset += buffer.size

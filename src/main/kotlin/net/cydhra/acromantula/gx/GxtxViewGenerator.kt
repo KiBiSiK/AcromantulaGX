@@ -136,8 +136,8 @@ class GxtxViewGenerator : ViewGeneratorStrategy {
         }
 
         // write everything to the file
-        outputStream.writeBytes(newHeaderBuffer.array())
-        outputStream.writeBytes(compressedData)
+        outputStream.write(newHeaderBuffer.array())
+        outputStream.write(compressedData)
 
         WorkspaceService.updateFileEntry(fileEntity, outputStream.toByteArray())
         outputStream.close()

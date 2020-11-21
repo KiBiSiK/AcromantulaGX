@@ -36,3 +36,9 @@ dependencies {
     implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: log4j2_version
     implementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: log4j2_version
 }
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+    kotlinOptions {
+        kotlinOptions.jvmTarget = jvm_target
+    }
+}
