@@ -8,6 +8,7 @@ import java.io.ByteArrayInputStream
 import java.io.PushbackInputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import kotlin.math.log
 
 /**
  * Import .art banks of CT3. They contain a set of GXT(X) files, which are GT Texture files.
@@ -30,10 +31,12 @@ class ArtArchiveImporterStrategy : ImporterStrategy {
 
         val imageNumber = buffer.getInt()
         val offsetTable = IntArray(imageNumber + 1) { if (it < imageNumber) buffer.getInt() else byteArray.size }
+        val decimals = log(imageNumber.toDouble(), 10.0).toInt()
 
         for (index in (0 until imageNumber)) {
             ImporterFeature.importFile(
-                archiveEntity, "image$index",
+                archiveEntity,
+                "image${String.format("%0${decimals}d", index)}",
                 ByteArrayInputStream(
                     byteArray,
                     offsetTable[index],
