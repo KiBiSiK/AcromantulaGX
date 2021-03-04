@@ -42,3 +42,11 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
         kotlinOptions.jvmTarget = jvm_target
     }
 }
+
+jar {
+    manifest {
+        attributes "Implementation-Title": project.name,
+                "Implementation-Version": project.version,
+                "Main-Class": "net.cydhra.acromantula.AcromantulaServiceKt"
+    }
+}
