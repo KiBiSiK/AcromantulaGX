@@ -1,7 +1,10 @@
 buildscript {
-    ext.kotlin_version = '1.5.0'
-    ext.jvm_target = '1.8'
-    ext.log4j2_version = '2.14.1'
+    ext {
+        kotlin_version = '1.5.0'
+        jvm_target = '1.8'
+        log4j2_version = '2.14.1'
+        exposed_version = '0.31.1'
+    }
 
     repositories {
         mavenCentral()
@@ -29,9 +32,11 @@ dependencies {
     implementation group: 'com.github.Cydhra', name: 'acromantula', version: 'd6a4ab00'
     implementation group: 'com.github.memo33', name: "jsquish", version: "2.0.1"
 
-    // apparently this is not a transitive dependency of 'acromantula'. I'm unsure why, but adding it here
+    // apparently exposed is not a transitive dependency of 'acromantula'. I'm unsure why, but adding it here
     // specifically should fix it (one cannot access classes in acromantula derived from classes of exposed otherwise)
-    implementation group: 'org.jetbrains.exposed', name: 'exposed-dao', version: '0.31.1'
+    implementation group: 'org.jetbrains.exposed', name: 'exposed-dao', version: exposed_version
+    implementation group: 'org.jetbrains.exposed', name: 'exposed-jdbc', version: exposed_version
+    implementation group: 'org.jetbrains.exposed', name: 'exposed-jodatime', version: exposed_version
 
     implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: log4j2_version
     implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: log4j2_version
