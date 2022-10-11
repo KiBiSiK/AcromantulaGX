@@ -1,2 +1,9 @@
 rootProject.name = 'acromantula-gx'
 
+if (file('../../build.gradle').exists()) {
+    includeBuild('../..') {
+        dependencySubstitution {
+            substitute module('com.github.Cydhra:acromantula') with project(':')
+        }
+    }
+}
