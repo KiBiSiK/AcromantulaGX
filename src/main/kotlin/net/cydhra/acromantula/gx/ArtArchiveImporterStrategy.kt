@@ -1,5 +1,6 @@
 package net.cydhra.acromantula.gx
 
+import kotlinx.coroutines.CompletableJob
 import net.cydhra.acromantula.features.importer.ImporterFeature
 import net.cydhra.acromantula.features.importer.ImporterStrategy
 import net.cydhra.acromantula.workspace.WorkspaceService
@@ -14,13 +15,18 @@ import kotlin.math.log
  * Import .art banks of CT3. They contain a set of GXT(X) files, which are GT Texture files.
  */
 class ArtArchiveImporterStrategy : ImporterStrategy {
-    override fun handles(fileName: String, fileContent: PushbackInputStream): Boolean {
+
+    override suspend fun handles(fileName: String, fileContent: PushbackInputStream): Boolean {
         // .art does not seem to have magic bytes. How dare they?
         return fileName.endsWith(".art")
     }
 
-    @Suppress("UsePropertyAccessSyntax")
-    override fun import(parent: FileEntity?, fileName: String, fileContent: PushbackInputStream) {
+    override suspend fun import(
+        supervisor: CompletableJob,
+        parent: FileEntity?,
+        fileName: String,
+        fileContent: PushbackInputStream
+    ): Pair<FileEntity, ByteArray?> {
         val byteArray = fileContent.readBytes()
         val buffer = ByteBuffer
             .wrap(byteArray)
@@ -35,6 +41,7 @@ class ArtArchiveImporterStrategy : ImporterStrategy {
 
         for (index in (0 until imageNumber)) {
             ImporterFeature.importFile(
+                supervisor,
                 archiveEntity,
                 "image${String.format("%0${decimals}d", index)}",
                 ByteArrayInputStream(
@@ -44,6 +51,7 @@ class ArtArchiveImporterStrategy : ImporterStrategy {
                 )
             )
         }
-    }
 
+        return Pair(archiveEntity, null)
+    }
 }
