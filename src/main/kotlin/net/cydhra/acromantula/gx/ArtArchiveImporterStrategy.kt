@@ -21,6 +21,8 @@ class ArtArchiveImporterStrategy : ImporterStrategy {
         return fileName.endsWith(".art")
     }
 
+    @Suppress("UsePropertyAccessSyntax") // buffer accessors (`getInt` etc) are modifying the underlying buffer,
+    // contrary to a getter contract
     override suspend fun import(
         supervisor: CompletableJob,
         parent: FileEntity?,
