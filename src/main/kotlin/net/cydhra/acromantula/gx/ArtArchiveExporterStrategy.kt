@@ -18,6 +18,8 @@ class ArtArchiveExporterStrategy : ExporterStrategy {
 
     override val name: String = "art"
 
+    override val supportedArchiveTypes: Collection<String> = listOf(ArtArchiveType.fileTypeIdentifier)
+
     override fun exportFile(fileEntity: FileEntity, outputStream: OutputStream) {
         if (!fileEntity.isDirectory) {
             throw IllegalArgumentException("only directories can be exported as art files")

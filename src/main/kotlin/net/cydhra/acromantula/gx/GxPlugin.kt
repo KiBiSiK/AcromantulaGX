@@ -1,5 +1,6 @@
 package net.cydhra.acromantula.gx
 
+import net.cydhra.acromantula.features.archives.ArchiveFeature
 import net.cydhra.acromantula.features.exporter.ExporterFeature
 import net.cydhra.acromantula.features.importer.ImporterFeature
 import net.cydhra.acromantula.features.view.GenerateViewFeature
@@ -17,6 +18,7 @@ class GxPlugin : AcromantulaPlugin {
     override val name: String = "CT3 GX Parsers"
 
     override fun initialize() {
+        ArchiveFeature.registerArchiveType(ArtArchiveType)
         ImporterFeature.registerImporterStrategy(ArtArchiveImporterStrategy())
         ExporterFeature.registerExporterStrategy(ArtArchiveExporterStrategy())
         GenerateViewFeature.registerViewGenerator(GxtxViewGenerator())

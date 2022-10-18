@@ -1,9 +1,9 @@
 package net.cydhra.acromantula.gx
 
 import kotlinx.coroutines.CompletableJob
+import net.cydhra.acromantula.features.archives.ArchiveFeature
 import net.cydhra.acromantula.features.importer.ImporterFeature
 import net.cydhra.acromantula.features.importer.ImporterStrategy
-import net.cydhra.acromantula.workspace.WorkspaceService
 import net.cydhra.acromantula.workspace.filesystem.FileEntity
 import java.io.ByteArrayInputStream
 import java.io.PushbackInputStream
@@ -34,8 +34,8 @@ class ArtArchiveImporterStrategy : ImporterStrategy {
             .wrap(byteArray)
             .order(ByteOrder.LITTLE_ENDIAN)
 
-        // add archive entry for the bank
-        val archiveEntity = WorkspaceService.addArchiveEntry(fileName, parent)
+        // add archive directory for the bank
+        val archiveDirectory = ArchiveFeature.addDirectory(fileName, parent)
 
         val imageNumber = buffer.getInt()
         val offsetTable = IntArray(imageNumber + 1) { if (it < imageNumber) buffer.getInt() else byteArray.size }
@@ -44,7 +44,7 @@ class ArtArchiveImporterStrategy : ImporterStrategy {
         for (index in (0 until imageNumber)) {
             ImporterFeature.importFile(
                 supervisor,
-                archiveEntity,
+                archiveDirectory,
                 "image${String.format("%0${decimals}d", index)}",
                 ByteArrayInputStream(
                     byteArray,
@@ -54,6 +54,8 @@ class ArtArchiveImporterStrategy : ImporterStrategy {
             )
         }
 
-        return Pair(archiveEntity, null)
+        ArchiveFeature.markDirectoryAsArchive(archiveDirectory, ArtArchiveType)
+
+        return Pair(archiveDirectory, null)
     }
 }
