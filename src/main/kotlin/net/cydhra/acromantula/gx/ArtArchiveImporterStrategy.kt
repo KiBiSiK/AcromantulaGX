@@ -39,7 +39,7 @@ class ArtArchiveImporterStrategy : ImporterStrategy {
 
         val imageNumber = buffer.getInt()
         val offsetTable = IntArray(imageNumber + 1) { if (it < imageNumber) buffer.getInt() else byteArray.size }
-        val decimals = log(imageNumber.toDouble(), 10.0).toInt()
+        val decimals = log(imageNumber.toDouble(), 10.0).toInt() + 1
 
         for (index in (0 until imageNumber)) {
             ImporterFeature.importFile(
