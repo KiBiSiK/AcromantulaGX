@@ -15,6 +15,10 @@ object ArtArchiveType : ArchiveType {
 
     override fun onFileMoved(archive: FileEntity, source: FileEntity, file: FileEntity) {}
 
+    override fun canRenameFile(name: String) = true
+
+    override fun onFileRename(archive: FileEntity, file: FileEntity, newName: String) {}
+
     override fun canDeleteFile() = false
 
     override fun onFileDelete(archive: FileEntity, file: FileEntity) {}
