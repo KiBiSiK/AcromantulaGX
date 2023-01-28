@@ -1,6 +1,5 @@
 package net.cydhra.acromantula.gx
 
-import kotlinx.coroutines.CompletableJob
 import net.cydhra.acromantula.features.archives.ArchiveFeature
 import net.cydhra.acromantula.features.importer.ImporterFeature
 import net.cydhra.acromantula.features.importer.ImporterStrategy
@@ -24,10 +23,7 @@ class ArtArchiveImporterStrategy : ImporterStrategy {
     @Suppress("UsePropertyAccessSyntax") // buffer accessors (`getInt` etc) are modifying the underlying buffer,
     // contrary to a getter contract
     override suspend fun import(
-        supervisor: CompletableJob,
-        parent: FileEntity?,
-        fileName: String,
-        fileContent: PushbackInputStream
+        parent: FileEntity?, fileName: String, fileContent: PushbackInputStream
     ): Pair<FileEntity, ByteArray?> {
         val byteArray = fileContent.readBytes()
         val buffer = ByteBuffer
@@ -43,13 +39,8 @@ class ArtArchiveImporterStrategy : ImporterStrategy {
 
         for (index in (0 until imageNumber)) {
             ImporterFeature.importFile(
-                supervisor,
-                archiveDirectory,
-                "image${String.format("%0${decimals}d", index)}",
-                ByteArrayInputStream(
-                    byteArray,
-                    offsetTable[index],
-                    offsetTable[index + 1] - offsetTable[index]
+                archiveDirectory, "image${String.format("%0${decimals}d", index)}", ByteArrayInputStream(
+                    byteArray, offsetTable[index], offsetTable[index + 1] - offsetTable[index]
                 )
             )
         }
