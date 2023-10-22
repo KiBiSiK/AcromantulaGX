@@ -67,7 +67,7 @@ class ArtArchiveExporterStrategy : ExporterStrategy {
     private fun collectTotalFiles(totalFiles: MutableList<FileEntity>, files: List<FileEntity>) {
         for (file in files) {
             if (file.isDirectory) {
-                val subFiles = WorkspaceService.getDirectoryContent(file)
+                val subFiles = WorkspaceService.listDirectory(file)
                 collectTotalFiles(totalFiles, subFiles)
             } else {
                 totalFiles += file
