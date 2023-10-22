@@ -4,11 +4,11 @@ import com.github.memo33.jsquish.Squish
 import net.cydhra.acromantula.features.view.ViewGeneratorStrategy
 import net.cydhra.acromantula.gx.util.ByteBufferedImage
 import net.cydhra.acromantula.workspace.WorkspaceService
-import net.cydhra.acromantula.workspace.disassembly.FileRepresentation
+import net.cydhra.acromantula.workspace.disassembly.FileViewEntity
+import net.cydhra.acromantula.workspace.disassembly.MediaType
 import net.cydhra.acromantula.workspace.filesystem.FileEntity
-import net.cydhra.acromantula.workspace.filesystem.FileType
-import net.cydhra.acromantula.workspace.filesystem.pngFileType
 import org.apache.logging.log4j.LogManager
+import sun.awt.windows.WPrinterJob
 import java.awt.geom.AffineTransform
 import java.awt.image.AffineTransformOp
 import java.awt.image.BufferedImage
@@ -32,7 +32,7 @@ class GxtxViewGenerator : ViewGeneratorStrategy {
 
     override val viewType: String = "gxtx"
 
-    override val fileType: FileType = pngFileType
+    override val fileType: MediaType = MediaType.PNG
 
     override val supportsReconstruction: Boolean = true
 
@@ -51,10 +51,9 @@ class GxtxViewGenerator : ViewGeneratorStrategy {
     }
 
     @Suppress("UsePropertyAccessSyntax")
-    override fun generateView(fileEntity: FileEntity): FileRepresentation {
-        val contentBuffer = ByteBuffer
-            .wrap(WorkspaceService.getFileContent(fileEntity).readBytes())
-            .order(ByteOrder.LITTLE_ENDIAN)
+    override fun generateView(fileEntity: FileEntity): FileViewEntity {
+        val contentBuffer =
+            ByteBuffer.wrap(WorkspaceService.getFileContent(fileEntity).readBytes()).order(ByteOrder.LITTLE_ENDIAN)
 
         // skip magic bytes
         contentBuffer.getInt()
@@ -72,8 +71,7 @@ class GxtxViewGenerator : ViewGeneratorStrategy {
         contentBuffer.get(dataBuffer)
 
         logger.debug(
-            "decompressing GXTX resource [$width x $height; $dataBufferSize bytes; " +
-                    "compression: $compressionType]"
+            "decompressing GXTX resource [$width x $height; $dataBufferSize bytes; " + "compression: $compressionType]"
         )
 
         val img = convertDataToImage(dataBuffer, width, height, compressionType)
@@ -87,10 +85,11 @@ class GxtxViewGenerator : ViewGeneratorStrategy {
 
         // write image as png into file system
         ImageIO.write(flipTransform.filter(img, null), "png", byteArrayOutputStream)
-        return WorkspaceService.addFileRepresentation(fileEntity, this.viewType, byteArrayOutputStream.toByteArray())
+        return WorkspaceService.addFileRepresentation(
+            fileEntity, this.viewType, this.fileType, byteArrayOutputStream.toByteArray()
+        )
     }
 
-    @Suppress("UsePropertyAccessSyntax")
     override fun reconstructFromView(fileEntity: FileEntity, buffer: ByteArray) {
         // TODO generate a database model, so I don't have to parse the meta data here again. I need it anyway for
         //  archive reconstruction
@@ -139,7 +138,7 @@ class GxtxViewGenerator : ViewGeneratorStrategy {
         outputStream.write(newHeaderBuffer.array())
         outputStream.write(compressedData)
 
-        WorkspaceService.updateFileEntry(fileEntity, outputStream.toByteArray())
+        WorkspaceService.updateFileContent(fileEntity, outputStream.toByteArray())
         outputStream.close()
     }
 
@@ -153,26 +152,21 @@ class GxtxViewGenerator : ViewGeneratorStrategy {
      * @param encoding [GxtxCompressionType] read in header
      */
     private fun convertDataToImage(
-        data: ByteArray,
-        width: Int,
-        height: Int,
-        encoding: GxtxCompressionType
+        data: ByteArray, width: Int, height: Int, encoding: GxtxCompressionType
     ): BufferedImage {
         return when (encoding) {
             GxtxCompressionType.DXT1 -> {
                 ByteBufferedImage(
-                    width,
-                    height,
-                    Squish.decompressImage(null, width, height, data, Squish.CompressionType.DXT1)
+                    width, height, Squish.decompressImage(null, width, height, data, Squish.CompressionType.DXT1)
                 )
             }
+
             GxtxCompressionType.DXT3 -> {
                 ByteBufferedImage(
-                    width,
-                    height,
-                    Squish.decompressImage(null, width, height, data, Squish.CompressionType.DXT3)
+                    width, height, Squish.decompressImage(null, width, height, data, Squish.CompressionType.DXT3)
                 )
             }
+
             GxtxCompressionType.A4R4G4B4 -> {
                 val img = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
                 val imageBuffer = img.raster.dataBuffer
@@ -190,6 +184,7 @@ class GxtxViewGenerator : ViewGeneratorStrategy {
 
                 img
             }
+
             GxtxCompressionType.A8R8G8B8 -> {
                 val img = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
                 val imageBuffer = img.raster.dataBuffer
@@ -207,6 +202,7 @@ class GxtxViewGenerator : ViewGeneratorStrategy {
 
                 img
             }
+
             GxtxCompressionType.A1R5G5B5 -> {
                 val img = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
                 val imageBuffer = img.raster.dataBuffer
@@ -223,6 +219,7 @@ class GxtxViewGenerator : ViewGeneratorStrategy {
                 }
                 img
             }
+
             GxtxCompressionType.R5G6B5 -> {
                 val img = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
                 val imageBuffer = img.raster.dataBuffer
@@ -261,10 +258,14 @@ class GxtxViewGenerator : ViewGeneratorStrategy {
                 }
             }
 
-            val compressedData = if (encoding == GxtxCompressionType.DXT1)
-                Squish.compressImage(rgba, width, height, null, Squish.CompressionType.DXT1)
-            else
-                Squish.compressImage(rgba, width, height, null, Squish.CompressionType.DXT3)
+            val compressedData = if (encoding == GxtxCompressionType.DXT1) Squish.compressImage(
+                rgba,
+                width,
+                height,
+                null,
+                Squish.CompressionType.DXT1
+            )
+            else Squish.compressImage(rgba, width, height, null, Squish.CompressionType.DXT3)
 
             return Triple(compressedData, width, height)
         } else {
